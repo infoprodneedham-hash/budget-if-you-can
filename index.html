@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraBudget — Fresh Recurring Expense & Cashflow Tracker</title>
+  
+  <!-- Modern Inline SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2306b6d4'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='26' fill='url(%23g)'/%3E%3Cpath d='M30 68 L50 32 L70 68 M38 54 L62 54' stroke='white' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='70' cy='32' r='7' fill='%23a7f3d0'/%3E%3C/svg%3E">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              300: '#6ee7b7',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b'
+            },
+            fresh: {
+              teal: '#0d9488',
+              cyan: '#0891b2',
+              ice: '#f0fdfa',
+              darkbg: '#090d16',
+              darksurface: '#111726',
+              darkcard: '#161f33',
+              darkborder: '#1e293b'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Immediate critical script: Guaranteed Welcome Modal dismissal + Trigger Affiliate Drawer Sequence -->
+  <script>
+    window.dismissWelcomeModal = function() {
+      try {
+        var modal = document.getElementById('welcomeModal');
+        var chk = document.getElementById('dontShowWelcomeAgain');
+        if (chk && chk.checked) {
+          try { localStorage.setItem('aurabudget_welcome_dismissed', 'true'); } catch(e){}
+        }
+        if (modal) {
+          modal.style.setProperty('display', 'none', 'important');
+          modal.style.setProperty('pointer-events', 'none', 'important');
+          modal.setAttribute('aria-hidden', 'true');
+        }
+        document.body.style.overflow = '';
+        
+        // Sequenced requirement: Slide out Affiliate drawer AFTER clearing past welcome modal
+        setTimeout(function() {
+          if (typeof window.openModal === 'function') {
+            window.openModal('affiliateDrawer');
+          } else {
+            var drawer = document.getElementById('affiliateDrawer');
+            if (drawer) drawer.classList.add('active');
+          }
+        }, 350);
+      } catch (err) {
+        console.error('dismissWelcomeModal error:', err);
+        var m = document.getElementById('welcomeModal');
+        if (m) m.style.display = 'none';
+        var aff = document.getElementById('affiliateDrawer');
+        if (aff) aff.classList.add('active');
+      }
+    };
+  </script>
+
+  <style>
+    /* CSS Variables & Theme Defaults */
+    :root {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary-teal: #0d9488;
+      --primary-emerald: #10b981;
+      --accent-cyan: #06b6d4;
+    }
+
+    .dark {
+      --bg-base: #090d16;
+      --bg-surface: #111726;
+      --bg-card: #161f33;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #1e293b;
+      --primary-teal: #14b8a6;
+      --primary-emerald: #34d399;
+      --accent-cyan: #22d3ee;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Inter', system-ui, sans-serif;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* SCROLLBARS */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #94a3b844; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b888; }
+
+    /* HARDENED MODAL & DRAWER OVERLAYS:
+       Must default to display: none and pointer-events: none so they never intercept mouse clicks */
+    .app-modal, .app-drawer {
+      display: none !important;
+      pointer-events: none !important;
+      z-index: -1 !important;
+    }
+    .app-modal.active, .app-drawer.active {
+      display: flex !important;
+      pointer-events: auto !important;
+      z-index: 50 !important;
+    }
+
+    /* Chart horizontal scroll */
+    .timeline-container::-webkit-scrollbar { height: 7px; }
+    .timeline-container::-webkit-scrollbar-thumb { background: #0d948866; border-radius: 9999px; }
+  </style>
+</head>
+<body class="min-h-full flex flex-col antialiased selection:bg-teal-500 selection:text-white">
+
+  <header class="sticky top-0 z-30 backdrop-blur-md bg-white/90 dark:bg-[#111726]/90 border-b border-slate-200/80 dark:border-slate-800 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3 cursor-pointer select-none" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 via-emerald-400 to-cyan-400 flex items-center justify-center shadow-md shadow-teal-500/20 text-white">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div>
+          <span class="text-xl font-black tracking-tight bg-gradient-to-r from-teal-600 via-emerald-500 to-cyan-500 bg-clip-text text-transparent">AuraBudget</span>
+          <span class="hidden sm:inline-block ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">Live Pro</span>
+        </div>
+      </div>
+
+      <!-- Action Utilities Header -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Quick Slots (1-8) Button -->
+        <button id="btnQuickSlots" type="button" class="p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-teal-500 dark:hover:border-teal-400 flex items-center gap-1.5 transition cursor-pointer">
+          <svg class="w-4 h-4 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+          <span class="hidden md:inline">Quick Slots (1-8)</span>
+        </button>
+
+        <!-- Backup & Restore Button -->
+        <button id="btnBackupRestore" type="button" class="p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-teal-500 dark:hover:border-teal-400 flex items-center gap-1.5 transition cursor-pointer">
+          <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          <span class="hidden sm:inline">Backup &amp; Restore</span>
+        </button>
+
+        <!-- Social Share Drawer Trigger -->
+        <button id="btnOpenSocial" type="button" aria-label="Open share drawer" class="p-2 text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" title="Share App">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="btnThemeToggle" type="button" aria-label="Toggle Dark and Light mode" class="p-2 text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" title="Toggle Theme">
+          <svg id="themeIconSun" class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg id="themeIconMoon" class="w-5 h-5 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+
+        <!-- Help Guide Trigger -->
+        <button id="btnHelp" type="button" aria-label="Open Welcome Guide" class="p-2 text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" title="Welcome Guide & Info">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Client-Side Storage Banner -->
+    <div id="snapshotAlertBanner" class="p-3.5 bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-sky-500/10 border border-teal-500/20 rounded-2xl flex items-center justify-between text-xs sm:text-sm text-teal-950 dark:text-teal-200 shadow-sm">
+      <div class="flex items-center gap-2.5">
+        <svg class="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span><strong>100% Client-Side Privacy:</strong> Your expenses are stored locally in IndexedDB. Use <em>Backup &amp; Restore</em> anytime to export your JSON/CSV snapshots.</span>
+      </div>
+      <button type="button" onclick="document.getElementById('snapshotAlertBanner').style.display='none'" class="text-teal-700 dark:text-teal-300 hover:underline shrink-0 ml-3 text-xs font-semibold cursor-pointer">Dismiss</button>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <section aria-label="Key Financial Metrics" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+      <!-- Monthly Normalized -->
+      <div class="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-3 -bottom-3 w-16 h-16 bg-teal-500/10 rounded-full group-hover:scale-125 transition-transform pointer-events-none"></div>
+        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Normalized Monthly</p>
+        <p id="statMonthlyTotal" class="text-2xl sm:text-3xl font-black text-teal-600 dark:text-teal-400 mt-1">$0.00</p>
+        <p class="text-[11px] text-slate-400 mt-1">Sum of regular recurring</p>
+      </div>
+
+      <!-- Next 40 Days Outflow -->
+      <div class="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-3 -bottom-3 w-16 h-16 bg-emerald-500/10 rounded-full group-hover:scale-125 transition-transform pointer-events-none"></div>
+        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Next 40 Days</p>
+        <p id="statNext40Total" class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">$0.00</p>
+        <p id="statNext40Count" class="text-[11px] text-slate-400 mt-1">0 upcoming payments</p>
+      </div>
+
+      <!-- Annual Run-Rate -->
+      <div class="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-3 -bottom-3 w-16 h-16 bg-cyan-500/10 rounded-full group-hover:scale-125 transition-transform pointer-events-none"></div>
+        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Annual Projected</p>
+        <p id="statAnnualTotal" class="text-2xl sm:text-3xl font-black text-cyan-600 dark:text-cyan-400 mt-1">$0.00</p>
+        <p class="text-[11px] text-slate-400 mt-1">12-Month run-rate</p>
+      </div>
+
+      <!-- Top Expense Category -->
+      <div class="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-3 -bottom-3 w-16 h-16 bg-purple-500/10 rounded-full group-hover:scale-125 transition-transform pointer-events-none"></div>
+        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Top Category</p>
+        <p id="statTopCategory" class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1 truncate">—</p>
+        <p id="statTopCatCost" class="text-[11px] text-slate-400 mt-1">$0.00 /mo</p>
+      </div>
+
+      <!-- Active Items Count -->
+      <div class="col-span-2 sm:col-span-1 bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-3 -bottom-3 w-16 h-16 bg-indigo-500/10 rounded-full group-hover:scale-125 transition-transform pointer-events-none"></div>
+        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Items</p>
+        <p id="statActiveCount" class="text-2xl sm:text-3xl font-black text-slate-700 dark:text-slate-200 mt-1">0</p>
+        <p id="statDueSoonCount" class="text-[11px] text-amber-500 font-semibold mt-1">0 due within 7 days</p>
+      </div>
+    </section>
+
+    <section class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
+            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Next 40 Days Cashflow Calendar &amp; Bar Graph</h2>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Interactive timeline of upcoming outflows with distinct urgency line markers across all priorities</p>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-sm shadow-rose-500/50"></span> High Priority</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-sm shadow-amber-500/50"></span> Medium</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block shadow-sm shadow-cyan-400/50"></span> Low Priority</span>
+        </div>
+      </div>
+
+      <!-- Timeline Bar Chart Canvas -->
+      <div class="relative w-full">
+        <div id="chartScrollContainer" class="timeline-container overflow-x-auto pb-4 pt-2">
+          <div id="timelineChart" class="flex gap-2 min-w-[940px] h-60 items-end px-3 border-b border-slate-200 dark:border-slate-800 pb-2 relative">
+            <!-- Dynamically populated day columns with proportional lines -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tooltip info display -->
+      <div id="timelineTooltip" class="hidden mt-3 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl text-xs flex flex-wrap items-center justify-between gap-2 border border-slate-200 dark:border-slate-700">
+        <span id="tooltipContent" class="font-medium text-slate-700 dark:text-slate-200">Hover or click any bar above to inspect upcoming items.</span>
+        <button type="button" onclick="document.getElementById('timelineTooltip').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold">&times;</button>
+      </div>
+    </section>
+
+    <section class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-2">
+      <div class="flex flex-wrap items-center gap-2 flex-1">
+        <!-- Search Input -->
+        <div class="relative flex-1 min-w-[200px]">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="searchInput" placeholder="Search groceries, Netflix, car insurance..." class="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111726] text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+
+        <!-- Filter Category -->
+        <select id="filterCategory" class="px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111726] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer">
+          <option value="all">All Categories</option>
+          <option value="groceries">Groceries</option>
+          <option value="vehicle">Vehicle</option>
+          <option value="medicines">Medicines</option>
+          <option value="deliveries">Deliveries</option>
+          <option value="subscriptions">Subscriptions</option>
+          <option value="general">General / Other</option>
+        </select>
+
+        <!-- Filter Urgency -->
+        <select id="filterPriority" class="px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111726] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer">
+          <option value="all">All Urgency</option>
+          <option value="high">High Priority</option>
+          <option value="medium">Medium Priority</option>
+          <option value="low">Low Priority</option>
+        </select>
+
+        <!-- Sort Option -->
+        <select id="sortBy" class="px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111726] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer">
+          <option value="dueDateAsc">Sort: Due Date (Earliest)</option>
+          <option value="dueDateDesc">Sort: Due Date (Latest)</option>
+          <option value="costDesc">Sort: Cost (Highest)</option>
+          <option value="costAsc">Sort: Cost (Lowest)</option>
+          <option value="priorityDesc">Sort: Urgency</option>
+          <option value="nameAsc">Sort: Name (A-Z)</option>
+        </select>
+      </div>
+
+      <!-- Add Expense Action -->
+      <button id="btnOpenAddModal" type="button" class="px-5 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold text-sm rounded-xl shadow-md shadow-teal-500/20 active:scale-95 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <span>Add Expense</span>
+      </button>
+    </section>
+
+    <section class="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/30">
+        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-base">Tracked Recurring Outflows</h3>
+        <span id="filteredCountBadge" class="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-2.5 py-1 rounded-full">0 entries</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse" id="expenseTable">
+          <thead>
+            <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800">
+              <th class="py-3 px-4 sm:px-6">Description</th>
+              <th class="py-3 px-3">Category</th>
+              <th class="py-3 px-3">Cost &amp; Frequency</th>
+              <th class="py-3 px-3">Next Due</th>
+              <th class="py-3 px-3">Urgency</th>
+              <th class="py-3 px-4 sm:px-6 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm">
+            <!-- Dynamically injected table rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden py-16 px-4 text-center">
+        <div class="w-16 h-16 mx-auto mb-3 text-slate-300 dark:text-slate-600">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        </div>
+        <h4 class="text-base font-semibold text-slate-700 dark:text-slate-300">No recurring expenses found</h4>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">Get started by clicking "+ Add Expense" or load sample presets below.</p>
+        <button type="button" onclick="seedSampleData()" class="mt-4 px-4 py-2 text-xs font-semibold rounded-xl bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-300 hover:bg-teal-100 transition cursor-pointer">
+          Load Sample Budget Presets
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111726] text-slate-500 dark:text-slate-400 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-md bg-teal-500 flex items-center justify-center text-white text-xs font-bold">$</div>
+          <span class="font-bold text-slate-700 dark:text-slate-200">AuraBudget</span>
+        </div>
+        <span class="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>
+        <span>Developer Support: <a href="mailto:info.biz.developer@gmail.com" class="text-teal-600 dark:text-teal-400 hover:underline">info.biz.developer@gmail.com</a></span>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <!-- Developer Contact Form (Tested & clickable) -->
+        <a href="https://support-lilac-omega.vercel.app/" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-500 text-slate-700 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 transition cursor-pointer">
+          Dev Contact Form &rarr;
+        </a>
+
+        <!-- Affiliate Drawer Trigger -->
+        <button id="btnOpenAffiliate" type="button" class="px-3 py-1.5 rounded-lg border border-teal-200 dark:border-teal-900 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 transition flex items-center gap-1.5 cursor-pointer">
+          <span>Featured Partner</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        </button>
+
+        <!-- Buy Me A Coffee (Stripe Checkout Integration) -->
+        <a href="https://buy.stripe.com/test_support_developer_coffee" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+          <span>Buy Me a Coffee</span>
+        </a>
+
+        <!-- Download App for Offline Running -->
+        <button id="btnDownloadOffline" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-medium transition flex items-center gap-1 cursor-pointer" title="Save entire page as self-contained standalone HTML app">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>Offline Copy</span>
+        </button>
+      </div>
+
+    </div>
+  </footer>
+
+  <div id="welcomeModal" class="app-modal fixed inset-0 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <!-- Click backdrop to dismiss -->
+    <div class="absolute inset-0 cursor-pointer" onclick="window.dismissWelcomeModal()"></div>
+
+    <!-- Modal Card Window -->
+    <div class="relative z-10 bg-white dark:bg-[#111726] rounded-3xl max-w-xl w-full p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+      
+      <div class="flex items-start justify-between">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white mb-2 shadow-lg shadow-teal-500/20">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <button type="button" onclick="window.dismissWelcomeModal()" aria-label="Close welcome modal" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-2xl leading-none transition cursor-pointer">
+          &times;
+        </button>
+      </div>
+      
+      <h3 id="welcomeTitle" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Welcome to AuraBudget</h3>
+      <p class="text-teal-600 dark:text-teal-400 font-bold text-xs tracking-wider uppercase mt-1">100% Free Forever &bull; Zero Tracking</p>
+      
+      <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+          <h4 class="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-teal-500"></span> What It Is
+          </h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">A fast recurring cashflow hub designed to track subscriptions, groceries, medicines, car upkeep, deliveries, and fixed expenses with urgency prioritization.</p>
+        </div>
+
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+          <h4 class="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-500"></span> Who It Is For
+          </h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Anyone managing regular disbursements who wants an interactive 40-day projection to anticipate upcoming expenses before renewals happen.</p>
+        </div>
+
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+          <h4 class="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Local Snapshot Notice
+          </h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Your data is stored strictly in your browser (IndexedDB). Always use the <em>Backup &amp; Restore</em> button to download JSON/CSV backups.
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Footer with CTA and Checkbox -->
+      <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+        <label class="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-500 dark:text-slate-400">
+          <input type="checkbox" id="dontShowWelcomeAgain" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4">
+          <span>Don't show this again</span>
+        </label>
+        
+        <!-- Launch App button with guaranteed inline onclick -->
+        <button id="btnLaunchApp" type="button" onclick="window.dismissWelcomeModal()" class="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold text-sm rounded-xl shadow-lg shadow-teal-500/25 active:scale-95 transition cursor-pointer select-none">
+          Launch App &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="expenseModal" class="app-modal fixed inset-0 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 cursor-pointer" onclick="closeExpenseModal()"></div>
+    <div class="relative z-10 bg-white dark:bg-[#111726] rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 id="modalTitle" class="text-xl font-bold text-slate-900 dark:text-slate-100">Add Recurring Expense</h3>
+        <button type="button" onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <form id="expenseForm" class="mt-4 space-y-4">
+        <input type="hidden" id="expenseId">
+
+        <!-- Name / Description -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Expense Name / Title *</label>
+          <input type="text" id="expenseName" required placeholder="e.g., Weekly Groceries, Netflix 4K, Insulin" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f33] text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+
+        <!-- Cost and Frequency Row -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Cost / Amount ($) *</label>
+            <input type="number" id="expenseAmount" step="0.01" min="0.01" required placeholder="49.99" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f33] text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Frequency *</label>
+            <select id="expenseFrequency" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f33] text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Bi-weekly (Fortnightly)</option>
+              <option value="monthly" selected>Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Category and Urgency Row -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Category *</label>
+            <select id="expenseCategory" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f33] text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer">
+              <option value="groceries">Groceries</option>
+              <option value="vehicle">Vehicle (Fuel, Insurance)</option>
+              <option value="medicines">Medicines &amp; Health</option>
+              <option value="deliveries">Deliveries</option>
+              <option value="subscriptions">Subscriptions</option>
+              <option value="general">General / Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Urgency Priority *</label>
+            <select id="expensePriority" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f33] text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer">
+              <option value="high">High (Essential / Critical)</option>
+              <option value="medium" selected>Medium (Standard)</option>
+              <option value="low">Low (Discretionary)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Next Due Date -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Next Payment Due Date *</label>
+          <input type="date" id="expenseDueDate" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f33] text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer">
+        </div>
+
+        <!-- Notes / Memo -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Notes / Tags (Optional)</label>
+          <input type="text" id="expenseNotes" placeholder="Card ending in 4402; review renewal" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f33] text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+
+        <div class="pt-3 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">Cancel</button>
+          <button type="submit" id="btnSaveExpense" class="px-5 py-2 text-xs font-bold rounded-xl bg-teal-500 hover:bg-teal-600 text-white shadow-md transition cursor-pointer">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="quickSlotsModal" class="app-modal fixed inset-0 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="absolute inset-0 cursor-pointer" onclick="closeQuickSlotsModal()"></div>
+    <div class="relative z-10 bg-white dark:bg-[#111726] rounded-3xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">8-Slot Quick Snapshot Memory</h3>
+          <p class="text-xs text-slate-500">Save and load instantly between 8 localized memory slots.</p>
+        </div>
+        <button type="button" onclick="closeQuickSlotsModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-2.5" id="quickSlotsList">
+        <!-- Rendered slots 1 to 8 -->
+      </div>
+      <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+        <button type="button" onclick="closeQuickSlotsModal()" class="px-4 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="backupModal" class="app-modal fixed inset-0 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="absolute inset-0 cursor-pointer" onclick="closeBackupModal()"></div>
+    <div class="relative z-10 bg-white dark:bg-[#111726] rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">Backup &amp; Restore Manager</h3>
+          <p class="text-xs text-slate-500">Portable JSON and CSV export/import for complete data control.</p>
+        </div>
+        <button type="button" onclick="closeBackupModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <div class="my-4 p-3 bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900 rounded-xl text-xs text-teal-950 dark:text-teal-200 space-y-1">
+        <p class="font-bold">Step-by-Step Instructions:</p>
+        <ol class="list-decimal list-inside space-y-0.5 text-[11px] opacity-90">
+          <li><strong>Export:</strong> Click "Export JSON" (recommended for complete fidelity) or "Export CSV".</li>
+          <li><strong>Store:</strong> Save this file in a safe local folder or cloud drive.</li>
+          <li><strong>Restore:</strong> Select an existing JSON or CSV file to load it back into your browser storage.</li>
+        </ol>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Export Data</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btnExportJSON" class="px-3 py-2 text-xs font-semibold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Export JSON</span>
+            </button>
+            <button type="button" id="btnExportCSV" class="px-3 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Import / Restore Data</h4>
+          <div class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-center hover:border-teal-500 transition">
+            <input type="file" id="fileImportInput" accept=".json,.csv" class="hidden">
+            <label for="fileImportInput" class="cursor-pointer flex flex-col items-center">
+              <svg class="w-8 h-8 text-teal-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+              <span class="text-xs font-bold text-teal-600 dark:text-teal-400">Click to upload JSON or CSV file</span>
+              <span class="text-[10px] text-slate-400 mt-0.5">Will import records into local storage</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <button type="button" id="btnClearAllData" class="px-3 py-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer">
+            Clear Database
+          </button>
+          <button type="button" onclick="closeBackupModal()" class="px-4 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="socialDrawer" class="app-drawer fixed inset-0 flex justify-end">
+    <!-- Overlay backdrop -->
+    <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm cursor-pointer" onclick="closeSocialDrawer()"></div>
+    
+    <div class="relative z-10 w-full max-w-sm h-full bg-white dark:bg-[#111726] border-l border-slate-200 dark:border-slate-800 shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+      <div>
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-teal-500 text-white flex items-center justify-center font-bold">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Share AuraBudget</h3>
+          </div>
+          <button type="button" onclick="closeSocialDrawer()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none cursor-pointer">&times;</button>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">Empower friends and family to stay ahead of upcoming renewals and recurring bills.</p>
+
+        <!-- Social Share Grid -->
+        <div class="mt-6 space-y-2.5">
+          <button type="button" onclick="shareToSocial('facebook')" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#1877f2] fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              Facebook
+            </span>
+            <span class="text-slate-400">&rarr;</span>
+          </button>
+
+          <button type="button" onclick="shareToSocial('twitter')" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 fill-current text-slate-800 dark:text-slate-100" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              X (Twitter)
+            </span>
+            <span class="text-slate-400">&rarr;</span>
+          </button>
+
+          <button type="button" onclick="shareToSocial('linkedin')" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#0077b5] fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.738-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+              LinkedIn
+            </span>
+            <span class="text-slate-400">&rarr;</span>
+          </button>
+
+          <button type="button" onclick="shareToSocial('whatsapp')" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#25d366] fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+              WhatsApp
+            </span>
+            <span class="text-slate-400">&rarr;</span>
+          </button>
+
+          <button type="button" onclick="shareToSocial('pinterest')" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#bd081c] fill-current" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.372-12 12 0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345-.09.375-.291 1.199-.334 1.373-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146 1.124.347 2.317.535 3.554.535 6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/></svg>
+              Pinterest
+            </span>
+            <span class="text-slate-400">&rarr;</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-slate-100 dark:border-slate-800">
+        <button type="button" id="btnCopyUrl" class="w-full py-2.5 px-4 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+          <span id="copyUrlLabel">Copy Web App URL</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="affiliateDrawer" class="app-drawer fixed inset-0 flex flex-col justify-end">
+    <!-- Overlay backdrop -->
+    <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm cursor-pointer" onclick="closeAffiliateDrawer()"></div>
+    
+    <div class="relative z-10 w-full max-w-2xl mx-auto bg-white dark:bg-[#111726] border-t border-slate-200 dark:border-slate-800 rounded-t-3xl shadow-2xl p-6 sm:p-7">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">☕</span>
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Featured Partner: EspressoHub</h3>
+        </div>
+        <button type="button" onclick="closeAffiliateDrawer()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <div class="my-4 space-y-3">
+        <p class="text-sm text-slate-600 dark:text-slate-300">
+          Fuel your financial discipline and daily focus with curated specialty coffee gear, beans, and automated home barista deliveries.
+        </p>
+
+        <a href="https://espressohub.app" target="_blank" rel="noopener noreferrer" class="block p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-600/10 border border-amber-500/30 hover:border-amber-500 transition group cursor-pointer">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-amber-800 dark:text-amber-300 group-hover:text-amber-600 flex items-center gap-2">
+                Visit EspressoHub.app
+                <svg class="w-4 h-4 inline-block group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </h4>
+              <p class="text-xs text-amber-900/80 dark:text-amber-200/80 mt-1">Discover precision espresso, grinder calibrations, and roasting recommendations.</p>
+            </div>
+            <span class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs shadow-sm shrink-0">Explore &rarr;</span>
+          </div>
+        </a>
+
+        <!-- Affiliate Disclosure -->
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 italic">
+          <strong>Affiliate Disclosure:</strong> The developer may receive a small commission from partner sites at no cost to you.
+        </p>
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button type="button" onclick="closeAffiliateDrawer()" class="px-4 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toastBox" class="fixed bottom-6 right-6 z-50 transform transition-all duration-300 translate-y-16 opacity-0 pointer-events-none">
+    <div class="bg-slate-900 text-white dark:bg-teal-900 dark:text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-700 dark:border-teal-700">
+      <span class="text-teal-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      </span>
+      <span id="toastMessage" class="text-xs font-medium">Notification</span>
+    </div>
+  </div>
+
+  <script>
+    /* MODAL AND DRAWER HELPERS */
+    window.openModal = function(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.add('active');
+    };
+    window.closeModal = function(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    };
+
+    window.closeExpenseModal = function() { window.closeModal('expenseModal'); };
+    window.closeQuickSlotsModal = function() { window.closeModal('quickSlotsModal'); };
+    window.closeBackupModal = function() { window.closeModal('backupModal'); };
+    window.closeSocialDrawer = function() { window.closeModal('socialDrawer'); };
+    window.closeAffiliateDrawer = function() { window.closeModal('affiliateDrawer'); };
+
+    /* TOAST MESSAGING */
+    function showToast(msg) {
+      try {
+        var toast = document.getElementById('toastBox');
+        var text = document.getElementById('toastMessage');
+        if (!toast || !text) return;
+        text.textContent = msg;
+        toast.classList.remove('translate-y-16', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        setTimeout(function() {
+          toast.classList.remove('translate-y-0', 'opacity-100');
+          toast.classList.add('translate-y-16', 'opacity-0');
+        }, 2800);
+      } catch (e) {
+        console.warn('Toast error:', e);
+      }
+    }
+
+    /* THEME MANAGER */
+    function initTheme() {
+      try {
+        var saved = localStorage.getItem('aurabudget_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+
+        var btn = document.getElementById('btnThemeToggle');
+        if (btn) {
+          btn.onclick = function() {
+            var isDark = document.documentElement.classList.toggle('dark');
+            try { localStorage.setItem('aurabudget_theme', isDark ? 'dark' : 'light'); } catch(e){}
+            renderTimelineChart();
+          };
+        }
+      } catch (e) {
+        console.warn('Theme init warning:', e);
+      }
+    }
+
+    /* STORAGE ENGINE (IndexedDB + localStorage Fallback) */
+    var DB_NAME = 'AuraBudgetDB_v3';
+    var STORE_NAME = 'expenses';
+    var db = null;
+    var expensesList = [];
+
+    function openDatabase() {
+      return new Promise(function(resolve) {
+        if (!window.indexedDB) return resolve(null);
+        try {
+          var req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = function(e) {
+            var d = e.target.result;
+            if (!d.objectStoreNames.contains(STORE_NAME)) {
+              d.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+          };
+          req.onsuccess = function(e) {
+            db = e.target.result;
+            resolve(db);
+          };
+          req.onerror = function() { resolve(null); };
+        } catch(e) {
+          resolve(null);
+        }
+      });
+    }
+
+    function dbGetAll() {
+      return new Promise(function(resolve) {
+        if (!db) {
+          try {
+            var raw = localStorage.getItem('aurabudget_data');
+            return resolve(raw ? JSON.parse(raw) : []);
+          } catch(e) { return resolve([]); }
+        }
+        try {
+          var tx = db.transaction(STORE_NAME, 'readonly');
+          var st = tx.objectStore(STORE_NAME);
+          var req = st.getAll();
+          req.onsuccess = function() { resolve(req.result || []); };
+          req.onerror = function() { resolve([]); };
+        } catch(e) { resolve([]); }
+      });
+    }
+
+    function dbPut(item) {
+      return new Promise(function(resolve) {
+        if (!db) {
+          try {
+            var idx = expensesList.findIndex(function(x) { return x.id === item.id; });
+            if (idx >= 0) expensesList[idx] = item;
+            else expensesList.push(item);
+            localStorage.setItem('aurabudget_data', JSON.stringify(expensesList));
+          } catch(e){}
+          return resolve();
+        }
+        try {
+          var tx = db.transaction(STORE_NAME, 'readwrite');
+          var st = tx.objectStore(STORE_NAME);
+          var req = st.put(item);
+          req.onsuccess = function() { resolve(); };
+          req.onerror = function() { resolve(); };
+        } catch(e) { resolve(); }
+      });
+    }
+
+    function dbDelete(id) {
+      return new Promise(function(resolve) {
+        if (!db) {
+          try {
+            expensesList = expensesList.filter(function(x) { return x.id !== id; });
+            localStorage.setItem('aurabudget_data', JSON.stringify(expensesList));
+          } catch(e){}
+          return resolve();
+        }
+        try {
+          var tx = db.transaction(STORE_NAME, 'readwrite');
+          var st = tx.objectStore(STORE_NAME);
+          var req = st.delete(id);
+          req.onsuccess = function() { resolve(); };
+          req.onerror = function() { resolve(); };
+        } catch(e) { resolve(); }
+      });
+    }
+
+    function dbClear() {
+      return new Promise(function(resolve) {
+        if (!db) {
+          try { localStorage.removeItem('aurabudget_data'); } catch(e){}
+          return resolve();
+        }
+        try {
+          var tx = db.transaction(STORE_NAME, 'readwrite');
+          var st = tx.objectStore(STORE_NAME);
+          var req = st.clear();
+          req.onsuccess = function() { resolve(); };
+          req.onerror = function() { resolve(); };
+        } catch(e) { resolve(); }
+      });
+    }
+
+    /* MATH & DATES */
+    function normalizeMonthly(amount, freq) {
+      var val = parseFloat(amount) || 0;
+      switch (freq) {
+        case 'daily': return val * 30.4375;
+        case 'weekly': return val * 4.333;
+        case 'biweekly': return val * 2.166;
+        case 'monthly': return val;
+        case 'quarterly': return val / 3;
+        case 'yearly': return val / 12;
+        default: return val;
+      }
+    }
+
+    function getDaysDiff(targetStr) {
+      var today = new Date();
+      today.setHours(0,0,0,0);
+      var target = new Date(targetStr + 'T00:00:00');
+      var diffTime = target.getTime() - today.getTime();
+      return Math.round(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    function stepDate(d, freq) {
+      switch (freq) {
+        case 'daily': d.setDate(d.getDate() + 1); break;
+        case 'weekly': d.setDate(d.getDate() + 7); break;
+        case 'biweekly': d.setDate(d.getDate() + 14); break;
+        case 'monthly': d.setMonth(d.getMonth() + 1); break;
+        case 'quarterly': d.setMonth(d.getMonth() + 3); break;
+        case 'yearly': d.setFullYear(d.getFullYear() + 1); break;
+        default: d.setMonth(d.getMonth() + 1); break;
+      }
+    }
+
+    function get40DayOccurrences(item) {
+      var res = [];
+      var today = new Date();
+      today.setHours(0,0,0,0);
+      var limit = new Date(today);
+      limit.setDate(today.getDate() + 40);
+
+      var cur = new Date(item.dueDate + 'T00:00:00');
+      if (isNaN(cur.getTime())) return res;
+
+      var safe = 0;
+      while (cur < today && safe < 500) {
+        stepDate(cur, item.frequency);
+        safe++;
+      }
+      safe = 0;
+      while (cur <= limit && safe < 60) {
+        res.push(new Date(cur));
+        stepDate(cur, item.frequency);
+        safe++;
+      }
+      return res;
+    }
+
+    function fmt(val) {
+      return '$' + (parseFloat(val) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    /* REVENUE & STATS RECALCULATION */
+    function updateMetrics() {
+      try {
+        var monthly = 0;
+        var next40Total = 0;
+        var next40Count = 0;
+        var dueSoon = 0;
+        var catTotals = {};
+
+        expensesList.forEach(function(item) {
+          var mVal = normalizeMonthly(item.amount, item.frequency);
+          monthly += mVal;
+          catTotals[item.category] = (catTotals[item.category] || 0) + mVal;
+
+          var diff = getDaysDiff(item.dueDate);
+          if (diff >= 0 && diff <= 7) dueSoon++;
+
+          var occs = get40DayOccurrences(item);
+          next40Count += occs.length;
+          next40Total += (occs.length * parseFloat(item.amount));
+        });
+
+        var topCat = '—';
+        var topVal = 0;
+        for (var c in catTotals) {
+          if (catTotals[c] > topVal) {
+            topVal = catTotals[c];
+            topCat = c.charAt(0).toUpperCase() + c.slice(1);
+          }
+        }
+
+        document.getElementById('statMonthlyTotal').textContent = fmt(monthly);
+        document.getElementById('statAnnualTotal').textContent = fmt(monthly * 12);
+        document.getElementById('statNext40Total').textContent = fmt(next40Total);
+        document.getElementById('statNext40Count').textContent = next40Count + ' upcoming payments';
+        document.getElementById('statTopCategory').textContent = topCat;
+        document.getElementById('statTopCatCost').textContent = fmt(topVal) + ' /mo';
+        document.getElementById('statActiveCount').textContent = expensesList.length;
+        document.getElementById('statDueSoonCount').textContent = dueSoon + ' due within 7 days';
+      } catch (e) {
+        console.warn('Metrics calc warning:', e);
+      }
+    }
+
+    function renderTimelineChart() {
+      try {
+        var container = document.getElementById('timelineChart');
+        if (!container) return;
+        container.innerHTML = '';
+
+        var today = new Date();
+        today.setHours(0,0,0,0);
+        var days = [];
+        var maxDay = 1;
+
+        for (var i = 0; i <= 40; i++) {
+          var d = new Date(today);
+          d.setDate(today.getDate() + i);
+          days.push({ 
+            date: d, 
+            dayOffset: i,
+            key: d.toISOString().split('T')[0], 
+            items: [], 
+            total: 0 
+          });
+        }
+
+        // Accurately map ALL expenses (including Low Priority) across the 40 days
+        expensesList.forEach(function(item) {
+          var occs = get40DayOccurrences(item);
+          occs.forEach(function(dt) {
+            var k = dt.toISOString().split('T')[0];
+            var match = days.find(function(x) { return x.key === k; });
+            if (match) {
+              match.items.push(item);
+              match.total += parseFloat(item.amount);
+            }
+          });
+        });
+
+        days.forEach(function(d) {
+          if (d.total > maxDay) maxDay = d.total;
+        });
+
+        days.forEach(function(day, idx) {
+          var isToday = idx === 0;
+          var col = document.createElement('div');
+          col.className = 'flex flex-col items-center flex-1 min-w-[34px] group relative cursor-pointer select-none h-full justify-end';
+
+          var hasDue = day.items.length > 0;
+          // Calculate proportional line height (0% if empty, or minimum visible 16% up to 96%)
+          var linePct = hasDue ? Math.max(16, Math.min(96, Math.round((day.total / maxDay) * 96))) : 0;
+
+          // Compute urgency priority breakdowns for that day
+          var hasHigh = day.items.some(function(x) { return x.priority === 'high'; });
+          var hasMed = day.items.some(function(x) { return x.priority === 'medium'; });
+          var hasLow = day.items.some(function(x) { return x.priority === 'low'; });
+
+          // Urgency color assignment: pure low priority gets distinct vibrant cyan/teal; mixed/high/med get appropriate hierarchy
+          var lineColor = 'bg-slate-300 dark:bg-slate-700';
+          var glowStyle = '';
+          var urgencyPill = '';
+
+          if (hasDue) {
+            if (hasHigh) {
+              lineColor = 'bg-gradient-to-t from-rose-500 via-rose-400 to-red-400 group-hover:from-rose-400 group-hover:to-red-300';
+              glowStyle = 'box-shadow: 0 0 10px rgba(244, 63, 94, 0.55);';
+              urgencyPill = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block mb-1"></span>';
+            } else if (hasMed) {
+              lineColor = 'bg-gradient-to-t from-amber-500 via-amber-400 to-yellow-400 group-hover:from-amber-400 group-hover:to-yellow-300';
+              glowStyle = 'box-shadow: 0 0 10px rgba(245, 158, 11, 0.55);';
+              urgencyPill = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mb-1"></span>';
+            } else if (hasLow) {
+              // Explicit Low Priority Visual Representation: crisp cyan/sky/teal gradient
+              lineColor = 'bg-gradient-to-t from-teal-500 via-cyan-400 to-sky-400 group-hover:from-teal-400 group-hover:to-cyan-300';
+              glowStyle = 'box-shadow: 0 0 10px rgba(6, 182, 212, 0.55);';
+              urgencyPill = '<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block mb-1"></span>';
+            }
+          }
+
+          // Line representation track
+          var barTrack = document.createElement('div');
+          barTrack.className = 'w-full flex-1 flex flex-col items-center justify-end py-1 relative';
+
+          if (hasDue) {
+            // Urgency indicator dot on top of bar on hover
+            var indicator = document.createElement('div');
+            indicator.className = 'text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 dark:text-slate-300 absolute -top-4';
+            indicator.textContent = fmt(day.total);
+            barTrack.appendChild(indicator);
+
+            var line = document.createElement('div');
+            line.className = 'w-1.5 sm:w-2 rounded-full transition-all duration-300 ' + lineColor;
+            line.style.height = linePct + '%';
+            if (glowStyle) line.style.cssText += glowStyle;
+
+            barTrack.appendChild(line);
+          } else {
+            // Subtle baseline dot for days without expenses
+            var dot = document.createElement('div');
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-slate-300/60 dark:bg-slate-700/60 mb-0.5';
+            barTrack.appendChild(dot);
+          }
+
+          // Date labels below baseline
+          var label = document.createElement('span');
+          var dayName = day.date.toLocaleDateString('en-US', { weekday: 'narrow' });
+          var dayNum = day.date.getDate();
+          label.className = 'text-[10px] mt-2 font-semibold ' + (isToday ? 'text-teal-600 dark:text-teal-400 font-black' : 'text-slate-400 dark:text-slate-500');
+          label.innerHTML = '<span class="block text-center text-[9px] uppercase">' + dayName + '</span><span class="block text-center leading-tight">' + dayNum + '</span>';
+
+          col.appendChild(barTrack);
+          col.appendChild(label);
+
+          col.onclick = function() { showDayDetails(day, isToday); };
+          col.onmouseenter = function() { showDayDetails(day, isToday); };
+
+          container.appendChild(col);
+        });
+      } catch (e) {
+        console.warn('Timeline render error:', e);
+      }
+    }
+
+    function showDayDetails(day, isToday) {
+      var tooltip = document.getElementById('timelineTooltip');
+      var content = document.getElementById('tooltipContent');
+      if (!tooltip || !content) return;
+      tooltip.classList.remove('hidden');
+
+      var dateStr = day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
+      if (day.items.length === 0) {
+        content.innerHTML = '<strong>' + dateStr + (isToday ? ' (Today)' : '') + ':</strong> No scheduled payments.';
+      } else {
+        var names = day.items.map(function(it) {
+          var pTag = it.priority === 'high' ? '<span class="text-rose-500 font-bold">[High]</span>' : (it.priority === 'low' ? '<span class="text-cyan-500 font-bold">[Low]</span>' : '<span class="text-amber-500 font-bold">[Med]</span>');
+          return pTag + ' ' + escapeHTML(it.name) + ' (' + fmt(it.amount) + ')';
+        }).join(' &bull; ');
+        content.innerHTML = '<strong>' + dateStr + (isToday ? ' (Today)' : '') + ' &bull; Total: ' + fmt(day.total) + '</strong> &mdash; ' + names;
+      }
+    }
+
+    /* EXPENSE TABLE RENDERING */
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>'"]/g, function(tag) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag;
+      });
+    }
+
+    function renderExpenseTable() {
+      try {
+        var tbody = document.getElementById('expenseTableBody');
+        var empty = document.getElementById('emptyState');
+        var table = document.getElementById('expenseTable');
+        var badge = document.getElementById('filteredCountBadge');
+        if (!tbody) return;
+
+        var q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+        var cat = document.getElementById('filterCategory').value;
+        var prio = document.getElementById('filterPriority').value;
+        var sort = document.getElementById('sortBy').value;
+
+        var filtered = expensesList.filter(function(item) {
+          var matchQ = item.name.toLowerCase().includes(q) ||
+                       (item.notes && item.notes.toLowerCase().includes(q)) ||
+                       item.category.toLowerCase().includes(q);
+          var matchCat = cat === 'all' || item.category === cat;
+          var matchPrio = prio === 'all' || item.priority === prio;
+          return matchQ && matchCat && matchPrio;
+        });
+
+        filtered.sort(function(a, b) {
+          switch (sort) {
+            case 'dueDateAsc': return new Date(a.dueDate) - new Date(b.dueDate);
+            case 'dueDateDesc': return new Date(b.dueDate) - new Date(a.dueDate);
+            case 'costDesc': return parseFloat(b.amount) - parseFloat(a.amount);
+            case 'costAsc': return parseFloat(a.amount) - parseFloat(b.amount);
+            case 'priorityDesc': {
+              var map = { high: 3, medium: 2, low: 1 };
+              return (map[b.priority] || 0) - (map[a.priority] || 0);
+            }
+            case 'nameAsc': return a.name.localeCompare(b.name);
+            default: return 0;
+          }
+        });
+
+        if (badge) badge.textContent = filtered.length + ' of ' + expensesList.length + ' items';
+        tbody.innerHTML = '';
+
+        if (filtered.length === 0) {
+          if (empty) empty.classList.remove('hidden');
+          if (table) table.classList.add('hidden');
+          return;
+        }
+
+        if (empty) empty.classList.add('hidden');
+        if (table) table.classList.remove('hidden');
+
+        filtered.forEach(function(item) {
+          var tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 transition group';
+
+          var diffDays = getDaysDiff(item.dueDate);
+          var dueBadge = '';
+          if (diffDays < 0) {
+            dueBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">Overdue ' + Math.abs(diffDays) + 'd</span>';
+          } else if (diffDays === 0) {
+            dueBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Due Today</span>';
+          } else if (diffDays <= 3) {
+            dueBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">In ' + diffDays + ' days</span>';
+          } else {
+            dueBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">In ' + diffDays + ' days</span>';
+          }
+
+          var catColors = {
+            groceries: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
+            vehicle: 'bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300',
+            medicines: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
+            deliveries: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+            subscriptions: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300',
+            general: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+          };
+          var catColor = catColors[item.category] || catColors.general;
+
+          var prioBadges = {
+            high: '<span class="text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span> High</span>',
+            medium: '<span class="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span> Medium</span>',
+            low: '<span class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50"></span> Low</span>'
+          };
+
+          tr.innerHTML = [
+            '<td class="py-3 px-4 sm:px-6">',
+              '<div class="font-bold text-slate-900 dark:text-slate-100">' + escapeHTML(item.name) + '</div>',
+              (item.notes ? '<div class="text-[11px] text-slate-400 dark:text-slate-500 truncate max-w-xs">' + escapeHTML(item.notes) + '</div>' : ''),
+            '</td>',
+            '<td class="py-3 px-3">',
+              '<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ' + catColor + '">' + item.category + '</span>',
+            '</td>',
+            '<td class="py-3 px-3">',
+              '<div class="font-black text-slate-800 dark:text-slate-200">' + fmt(item.amount) + '</div>',
+              '<div class="text-[10px] text-slate-400 capitalize">' + item.frequency + '</div>',
+            '</td>',
+            '<td class="py-3 px-3 whitespace-nowrap">',
+              '<div class="text-xs text-slate-700 dark:text-slate-300 font-medium">' + item.dueDate + '</div>',
+              '<div class="mt-0.5">' + dueBadge + '</div>',
+            '</td>',
+            '<td class="py-3 px-3 whitespace-nowrap">',
+              (prioBadges[item.priority] || prioBadges.medium),
+            '</td>',
+            '<td class="py-3 px-4 sm:px-6 text-right whitespace-nowrap">',
+              '<button type="button" onclick="editExpense(\'' + item.id + '\')" class="p-1.5 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition cursor-pointer" title="Edit">',
+                '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>',
+              '</button>',
+              '<button type="button" onclick="deleteExpense(\'' + item.id + '\')" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition ml-1 cursor-pointer" title="Delete">',
+                '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>',
+              '</button>',
+            '</td>'
+          ].join('');
+
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.warn('Table render warning:', e);
+      }
+    }
+
+    window.editExpense = function(id) {
+      var item = expensesList.find(function(x) { return x.id === id; });
+      if (!item) return;
+      document.getElementById('modalTitle').textContent = 'Edit Recurring Expense';
+      document.getElementById('expenseId').value = item.id;
+      document.getElementById('expenseName').value = item.name;
+      document.getElementById('expenseAmount').value = item.amount;
+      document.getElementById('expenseFrequency').value = item.frequency;
+      document.getElementById('expenseCategory').value = item.category;
+      document.getElementById('expensePriority').value = item.priority;
+      document.getElementById('expenseDueDate').value = item.dueDate;
+      document.getElementById('expenseNotes').value = item.notes || '';
+      window.openModal('expenseModal');
+    };
+
+    window.deleteExpense = async function(id) {
+      await dbDelete(id);
+      expensesList = expensesList.filter(function(x) { return x.id !== id; });
+      updateMetrics();
+      renderExpenseTable();
+      renderTimelineChart();
+      showToast('Expense removed');
+    };
+
+    document.getElementById('expenseForm').onsubmit = async function(e) {
+      e.preventDefault();
+      var id = document.getElementById('expenseId').value || ('exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+      var item = {
+        id: id,
+        name: document.getElementById('expenseName').value.trim(),
+        amount: parseFloat(document.getElementById('expenseAmount').value),
+        frequency: document.getElementById('expenseFrequency').value,
+        category: document.getElementById('expenseCategory').value,
+        priority: document.getElementById('expensePriority').value,
+        dueDate: document.getElementById('expenseDueDate').value,
+        notes: document.getElementById('expenseNotes').value.trim()
+      };
+
+      await dbPut(item);
+      var idx = expensesList.findIndex(function(x) { return x.id === id; });
+      if (idx >= 0) expensesList[idx] = item;
+      else expensesList.push(item);
+
+      closeExpenseModal();
+      updateMetrics();
+      renderExpenseTable();
+      renderTimelineChart();
+      showToast('Saved expense!');
+    };
+
+    /* QUICK SLOTS (1-8) */
+    function renderQuickSlotsUI() {
+      var container = document.getElementById('quickSlotsList');
+      if (!container) return;
+      container.innerHTML = '';
+
+      for (var slot = 1; slot <= 8; slot++) {
+        var key = 'aurabudget_slot_' + slot;
+        var data = null;
+        try {
+          var raw = localStorage.getItem(key);
+          data = raw ? JSON.parse(raw) : null;
+        } catch(e){}
+
+        var card = document.createElement('div');
+        card.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 flex flex-col justify-between';
+        card.innerHTML = [
+          '<div>',
+            '<div class="flex items-center justify-between">',
+              '<span class="font-black text-xs text-teal-600 dark:text-teal-400">Slot ' + slot + '</span>',
+              '<span class="text-[10px] text-slate-400">' + (data ? data.items.length + ' items' : 'Empty') + '</span>',
+            '</div>',
+            '<p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 truncate">',
+              (data ? new Date(data.time).toLocaleDateString() : 'No snapshot'),
+            '</p>',
+          '</div>',
+          '<div class="flex gap-1.5 mt-3 pt-2 border-t border-slate-200 dark:border-slate-700">',
+            '<button type="button" onclick="saveSlot(' + slot + ')" class="flex-1 py-1 text-[11px] font-bold rounded-lg bg-teal-500 hover:bg-teal-600 text-white transition cursor-pointer">Save</button>',
+            '<button type="button" onclick="loadSlot(' + slot + ')" ' + (!data ? 'disabled' : '') + ' class="flex-1 py-1 text-[11px] font-bold rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer">Load</button>',
+          '</div>'
+        ].join('');
+        container.appendChild(card);
+      }
+    }
+
+    window.saveSlot = function(num) {
+      try {
+        localStorage.setItem('aurabudget_slot_' + num, JSON.stringify({
+          time: new Date().toISOString(),
+          items: expensesList
+        }));
+        showToast('Saved to Slot #' + num);
+        renderQuickSlotsUI();
+      } catch(e) { showToast('Storage quota exceeded'); }
+    };
+
+    window.loadSlot = async function(num) {
+      try {
+        var raw = localStorage.getItem('aurabudget_slot_' + num);
+        if (!raw) return;
+        var parsed = JSON.parse(raw);
+        if (!parsed.items) return;
+
+        await dbClear();
+        for (var i = 0; i < parsed.items.length; i++) {
+          await dbPut(parsed.items[i]);
+        }
+        expensesList = parsed.items;
+        updateMetrics();
+        renderExpenseTable();
+        renderTimelineChart();
+        closeQuickSlotsModal();
+        showToast('Loaded Slot #' + num);
+      } catch(e) { showToast('Failed to load slot'); }
+    };
+
+    /* BACKUP / RESTORE HANDLERS */
+    document.getElementById('btnExportJSON').onclick = function() {
+      var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(expensesList, null, 2));
+      var a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", "aurabudget_backup.json");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('Exported JSON successfully');
+    };
+
+    document.getElementById('btnExportCSV').onclick = function() {
+      if (expensesList.length === 0) return showToast('No expenses to export');
+      var headers = ["id", "name", "amount", "frequency", "category", "priority", "dueDate", "notes"];
+      var rows = expensesList.map(function(item) {
+        return [
+          '"' + item.id + '"',
+          '"' + (item.name || '').replace(/"/g, '""') + '"',
+          item.amount,
+          '"' + item.frequency + '"',
+          '"' + item.category + '"',
+          '"' + item.priority + '"',
+          '"' + item.dueDate + '"',
+          '"' + (item.notes || '').replace(/"/g, '""') + '"'
+        ];
+      });
+      var csv = "data:text/csv;charset=utf-8," + [headers.join(','), rows.map(function(e){ return e.join(','); }).join('\n')].join('\n');
+      var a = document.createElement("a");
+      a.setAttribute("href", encodeURI(csv));
+      a.setAttribute("download", "aurabudget_backup.csv");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('Exported CSV successfully');
+    };
+
+    document.getElementById('fileImportInput').onchange = function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          var content = evt.target.result;
+          if (file.name.endsWith('.json')) {
+            var items = JSON.parse(content);
+            if (Array.isArray(items)) {
+              for (var i = 0; i < items.length; i++) {
+                if (items[i].id && items[i].name) await dbPut(items[i]);
+              }
+            }
+          }
+          expensesList = await dbGetAll();
+          updateMetrics();
+          renderExpenseTable();
+          renderTimelineChart();
+          closeBackupModal();
+          showToast('Import completed!');
+        } catch(err) {
+          showToast('Invalid file format');
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    document.getElementById('btnClearAllData').onclick = async function() {
+      await dbClear();
+      expensesList = [];
+      updateMetrics();
+      renderExpenseTable();
+      renderTimelineChart();
+      closeBackupModal();
+      showToast('All local data cleared');
+    };
+
+    /* SOCIAL SHARING */
+    window.shareToSocial = function(network) {
+      var u = encodeURIComponent(window.location.href);
+      var t = encodeURIComponent("Track recurring expenses & 40-day cashflow with AuraBudget!");
+      var link = '';
+      switch (network) {
+        case 'facebook': link = 'https://www.facebook.com/sharer/sharer.php?u=' + u; break;
+        case 'twitter': link = 'https://twitter.com/intent/tweet?text=' + t + '&url=' + u; break;
+        case 'linkedin': link = 'https://www.linkedin.com/sharing/share-offsite/?url=' + u; break;
+        case 'whatsapp': link = 'https://api.whatsapp.com/send?text=' + t + '%20' + u; break;
+        case 'pinterest': link = 'https://pinterest.com/pin/create/button/?url=' + u + '&description=' + t; break;
+      }
+      if (link) window.open(link, '_blank', 'width=600,height=500');
+    };
+
+    document.getElementById('btnCopyUrl').onclick = function() {
+      try {
+        var dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = window.location.href;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        showToast('URL copied to clipboard!');
+        var lbl = document.getElementById('copyUrlLabel');
+        if (lbl) {
+          lbl.textContent = 'Copied!';
+          setTimeout(function() { lbl.textContent = 'Copy Web App URL'; }, 2000);
+        }
+      } catch(e) { showToast('Could not copy link'); }
+    };
+
+    // Add Expense Modal Trigger
+    document.getElementById('btnOpenAddModal').onclick = function() {
+      document.getElementById('modalTitle').textContent = 'Add Recurring Expense';
+      document.getElementById('expenseForm').reset();
+      document.getElementById('expenseId').value = '';
+      var tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById('expenseDueDate').value = tomorrow.toISOString().split('T')[0];
+      window.openModal('expenseModal');
+    };
+
+    // Quick Slots Trigger
+    document.getElementById('btnQuickSlots').onclick = function() {
+      renderQuickSlotsUI();
+      window.openModal('quickSlotsModal');
+    };
+
+    // Backup Trigger
+    document.getElementById('btnBackupRestore').onclick = function() {
+      window.openModal('backupModal');
+    };
+
+    // Social Drawer Trigger
+    document.getElementById('btnOpenSocial').onclick = function() {
+      window.openModal('socialDrawer');
+    };
+
+    // Affiliate Drawer Trigger
+    document.getElementById('btnOpenAffiliate').onclick = function() {
+      window.openModal('affiliateDrawer');
+    };
+
+    // Help Guide Trigger
+    document.getElementById('btnHelp').onclick = function() {
+      window.openModal('welcomeModal');
+    };
+
+    // Offline Download Trigger
+    document.getElementById('btnDownloadOffline').onclick = function() {
+      var blob = new Blob([document.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'AuraBudget_App.html';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('Downloaded offline HTML!');
+    };
+
+    // Search and Filters
+    ['searchInput', 'filterCategory', 'filterPriority', 'sortBy'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.oninput = renderExpenseTable;
+        el.onchange = renderExpenseTable;
+      }
+    });
+
+    // Preset Seed Data: includes high, medium, and low priority recurring items
+    window.seedSampleData = async function() {
+      var today = new Date();
+      var fmtDate = function(offset) {
+        var d = new Date(today);
+        d.setDate(today.getDate() + offset);
+        return d.toISOString().split('T')[0];
+      };
+
+      var presets = [
+        { id: 's1', name: 'Fresh Weekly Groceries', amount: 135.00, frequency: 'weekly', category: 'groceries', priority: 'high', dueDate: fmtDate(2), notes: 'Fresh produce & kitchen staples' },
+        { id: 's2', name: 'Car Insurance Premium', amount: 84.50, frequency: 'monthly', category: 'vehicle', priority: 'high', dueDate: fmtDate(7), notes: 'Comprehensive auto policy' },
+        { id: 's3', name: 'Prescription Medicine', amount: 42.00, frequency: 'monthly', category: 'medicines', priority: 'high', dueDate: fmtDate(4), notes: 'Monthly recurring pharmacy prescription' },
+        { id: 's4', name: 'Netflix Premium 4K', amount: 22.99, frequency: 'monthly', category: 'subscriptions', priority: 'low', dueDate: fmtDate(14), notes: 'Streaming subscription' },
+        { id: 's5', name: 'Spotify Music Family', amount: 16.99, frequency: 'monthly', category: 'subscriptions', priority: 'low', dueDate: fmtDate(20), notes: 'Family audio stream' },
+        { id: 's6', name: 'Amazon Prime Pass', amount: 139.00, frequency: 'yearly', category: 'deliveries', priority: 'medium', dueDate: fmtDate(24), notes: 'Annual free delivery membership' },
+        { id: 's7', name: 'Commute & Fuel Refill', amount: 65.00, frequency: 'biweekly', category: 'vehicle', priority: 'medium', dueDate: fmtDate(6), notes: 'Gas and highway toll account' },
+        { id: 's8', name: 'Gym & Fitness Pass', amount: 19.50, frequency: 'weekly', category: 'general', priority: 'medium', dueDate: fmtDate(1), notes: 'Health club membership' }
+      ];
+
+      for (var i = 0; i < presets.length; i++) {
+        await dbPut(presets[i]);
+      }
+      expensesList = await dbGetAll();
+      updateMetrics();
+      renderExpenseTable();
+      renderTimelineChart();
+      showToast('Loaded 8 sample expenses!');
+    };
+
+    // App Initialization Bootstrapper
+    window.addEventListener('DOMContentLoaded', async function() {
+      initTheme();
+
+      // Check welcome modal state
+      var dismissed = false;
+      try { dismissed = localStorage.getItem('aurabudget_welcome_dismissed') === 'true'; } catch(e){}
+      
+      if (!dismissed) {
+        // Welcome modal takes initial focus; Affiliate Drawer will ONLY slide out when dismissed
+        window.openModal('welcomeModal');
+      } else {
+        // If already permanently dismissed, open affiliate drawer gently
+        setTimeout(function() {
+          window.openModal('affiliateDrawer');
+        }, 500);
+      }
+
+      await openDatabase();
+      expensesList = await dbGetAll();
+
+      if (expensesList.length === 0) {
+        await seedSampleData();
+      } else {
+        updateMetrics();
+        renderExpenseTable();
+        renderTimelineChart();
+      }
+    });
+
+    window.addEventListener('resize', function() {
+      renderTimelineChart();
+    });
+  </script>
+</body>
+</html>
