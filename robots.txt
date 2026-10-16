@@ -1,0 +1,6 @@
+# Allow all standard search crawlers
+User-agent: *
+Allow: /
+
+# Reference to sitemap
+Sitemap: https://mybudgettrack.app/sitemap.xml
