@@ -685,46 +685,7 @@
     </div>
   </div>
 
-  <div id="affiliateDrawer" class="app-drawer fixed inset-0 flex flex-col justify-end">
-    <!-- Overlay backdrop -->
-    <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm cursor-pointer" onclick="closeAffiliateDrawer()"></div>
-    
-    <div class="relative z-10 w-full max-w-2xl mx-auto bg-white dark:bg-[#111726] border-t border-slate-200 dark:border-slate-800 rounded-t-3xl shadow-2xl p-6 sm:p-7">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-        <div class="flex items-center gap-2.5">
-          <span class="text-xl">☕</span>
-          <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Featured Partner: EspressoHub</h3>
-        </div>
-        <button type="button" onclick="closeAffiliateDrawer()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none cursor-pointer">&times;</button>
-      </div>
-
-      <div class="my-4 space-y-3">
-        <p class="text-sm text-slate-600 dark:text-slate-300">
-          Fuel your financial discipline and daily focus with curated specialty apps designed for time saving, productivity and lesuire
-        </p>
-
-        <a href="https://espressohub.app" target="_blank" rel="noopener noreferrer" class="block p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-600/10 border border-amber-500/30 hover:border-amber-500 transition group cursor-pointer">
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="font-bold text-amber-800 dark:text-amber-300 group-hover:text-amber-600 flex items-center gap-2">
-                Visit EspressoHub.app
-                <svg class="w-4 h-4 inline-block group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-              </h4>
-              <p class="text-xs text-amber-900/80 dark:text-amber-200/80 mt-1">Discover precision workflow, lifestyle calibrations, and productivity recommendations.</p>
-            </div>
-            <span class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs shadow-sm shrink-0">Explore &rarr;</span>
-          </div>
-        </a>
-
-        <!-- Affiliate Disclosure -->
-        <p class="text-[11px] text-slate-400 dark:text-slate-500 italic">
-          <strong>Affiliate Disclosure:</strong> The developer may receive a small commission from partner sites at no cost to you.
-        </p>
-      </div>
-
-      <div class="pt-2 flex justify-end">
-        <button type="button" onclick="closeAffiliateDrawer()" class="px-4 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">Close</button>
-      </div>
+  
     </div>
   </div>
 
@@ -1613,6 +1574,283 @@
       renderTimelineChart();
     });
   </script>
- 
+ <!-- ========================================== -->
+<!-- START: Affiliate Bottom Drawer Snippet     -->
+<!-- Paste this right before </body>            -->
+<!-- ========================================== -->
+<aside id="affiliate-drawer" class="aff-drawer-open" aria-label="Featured Tools & Apps">
+  <!-- Drawer Header / Toggle Button -->
+  <button id="aff-drawer-toggle" class="aff-drawer-toggle" aria-expanded="true" title="Toggle Featured Tools">
+    <span class="aff-toggle-title">
+      <svg class="aff-icon-sparkle" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+        <path d="M12 2l2.4 7.2L21.6 12l-7.2 2.4L12 21.6l-2.4-7.2L2.4 12l7.2-2.4z"/>
+      </svg>
+      Featured Creative Apps
+    </span>
+    <span class="aff-toggle-icon">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </span>
+  </button>
+
+  <!-- Drawer Body -->
+  <div class="aff-drawer-content">
+    <div class="aff-cards-grid">
+      
+      <!-- Link 1: conceptpromptgen.app -->
+      <a href="https://conceptpromptgen.app" target="_blank" rel="noopener noreferrer" class="aff-card">
+        <div class="aff-card-icon aff-grad-1">💡</div>
+        <div class="aff-card-body">
+          <span class="aff-card-title">ConceptPromptGen</span>
+          <span class="aff-card-desc">Generate rich creative prompts & ideas</span>
+        </div>
+        <span class="aff-card-arrow">↗</span>
+      </a>
+
+      <!-- Link 2: webtemplategen.app -->
+      <a href="https://webtemplategen.app" target="_blank" rel="noopener noreferrer" class="aff-card">
+        <div class="aff-card-icon aff-grad-2">🌐</div>
+        <div class="aff-card-body">
+          <span class="aff-card-title">WebTemplateGen</span>
+          <span class="aff-card-desc">Instant web layouts & code boilerplate</span>
+        </div>
+        <span class="aff-card-arrow">↗</span>
+      </a>
+
+      <!-- Link 3: characterpromptgen.app -->
+      <a href="https://characterpromptgen.app" target="_blank" rel="noopener noreferrer" class="aff-card">
+        <div class="aff-card-icon aff-grad-3">🎭</div>
+        <div class="aff-card-body">
+          <span class="aff-card-title">CharacterPromptGen</span>
+          <span class="aff-card-desc">Craft detailed character bios & roles</span>
+        </div>
+        <span class="aff-card-arrow">↗</span>
+      </a>
+
+      <!-- Link 4: designproflow.app -->
+      <a href="https://designproflow.app" target="_blank" rel="noopener noreferrer" class="aff-card">
+        <div class="aff-card-icon aff-grad-4">⚡</div>
+        <div class="aff-card-body">
+          <span class="aff-card-title">DesignProFlow</span>
+          <span class="aff-card-desc">Supercharge your design workflow</span>
+        </div>
+        <span class="aff-card-arrow">↗</span>
+      </a>
+
+    </div>
+  </div>
+</aside>
+
+<style>
+  /* Scoped drawer styles to avoid conflicts */
+  #affiliate-drawer {
+    --aff-bg: #121318;
+    --aff-card-bg: rgba(255, 255, 255, 0.05);
+    --aff-card-hover: rgba(255, 255, 255, 0.1);
+    --aff-border: rgba(255, 255, 255, 0.1);
+    --aff-text-primary: #ffffff;
+    --aff-text-secondary: #9aa0a6;
+    --aff-accent: #6366f1;
+
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 0);
+    width: 95%;
+    max-width: 1040px;
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    box-sizing: border-box;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  #affiliate-drawer *,
+  #affiliate-drawer *::before,
+  #affiliate-drawer *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Slide-down closed state */
+  #affiliate-drawer.aff-drawer-closed {
+    transform: translate(-50%, calc(100% - 38px));
+  }
+
+  /* Header / Toggle button */
+  .aff-drawer-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--aff-bg);
+    border: 1px solid var(--aff-border);
+    border-bottom: none;
+    padding: 7px 18px;
+    border-radius: 12px 12px 0 0;
+    color: var(--aff-text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+    outline: none;
+    user-select: none;
+    position: relative;
+    left: 20px;
+  }
+
+  .aff-drawer-toggle:hover {
+    background: #1a1c23;
+  }
+
+  .aff-toggle-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.2px;
+  }
+
+  .aff-icon-sparkle {
+    color: #f59e0b;
+  }
+
+  .aff-toggle-icon {
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s ease;
+  }
+
+  #affiliate-drawer.aff-drawer-closed .aff-toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  /* Content Container */
+  .aff-drawer-content {
+    background: var(--aff-bg);
+    border: 1px solid var(--aff-border);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    padding: 16px 20px 20px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+  }
+
+  /* Grid of 4 links */
+  .aff-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  /* Card link style */
+  .aff-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--aff-card-bg);
+    border: 1px solid var(--aff-border);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .aff-card:hover {
+    background: var(--aff-card-hover);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  .aff-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .aff-grad-1 { background: linear-gradient(135deg, #f59e0b25, #f59e0b40); }
+  .aff-grad-2 { background: linear-gradient(135deg, #3b82f625, #3b82f640); }
+  .aff-grad-3 { background: linear-gradient(135deg, #ec489925, #ec489940); }
+  .aff-grad-4 { background: linear-gradient(135deg, #10b98125, #10b98140); }
+
+  .aff-card-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .aff-card-title {
+    color: var(--aff-text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .aff-card-desc {
+    color: var(--aff-text-secondary);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  .aff-card-arrow {
+    color: var(--aff-text-secondary);
+    font-size: 14px;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .aff-card:hover .aff-card-arrow {
+    transform: translate(2px, -2px);
+    color: var(--aff-text-primary);
+  }
+
+  /* Responsive breakpoints */
+  @media (max-width: 900px) {
+    .aff-cards-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 520px) {
+    #affiliate-drawer {
+      width: 100%;
+    }
+    .aff-cards-grid {
+      grid-template-columns: 1fr;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .aff-drawer-toggle {
+      left: 12px;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    const drawer = document.getElementById('affiliate-drawer');
+    const toggleBtn = document.getElementById('aff-drawer-toggle');
+
+    if (toggleBtn && drawer) {
+      toggleBtn.addEventListener('click', function() {
+        const isClosed = drawer.classList.toggle('aff-drawer-closed');
+        drawer.classList.toggle('aff-drawer-open', !isClosed);
+        toggleBtn.setAttribute('aria-expanded', String(!isClosed));
+      });
+    }
+  })();
+</script>
+<!-- ========================================== -->
+<!-- END: Affiliate Bottom Drawer Snippet       -->
+<!-- ========================================== -->
 </body>
 </html>
